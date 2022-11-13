@@ -161,3 +161,6 @@ cython_debug/
 *.xml
 *.iml
 auth.txt
+bot_auth.txt
+user_auth.txt
+DataBase.db
