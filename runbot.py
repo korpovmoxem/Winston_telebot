@@ -9,6 +9,7 @@ from database import student_payment
 from database import delete_student
 from database import change_fio
 from database import change_data
+from database import change_value
 
 
 with open('bot_auth.txt', 'r') as file:
@@ -25,6 +26,7 @@ main_menu_markup = types.ReplyKeyboardMarkup(row_width=2)
 main_menu_button_add = types.KeyboardButton('Как добавить')
 main_menu_button_change_name = types.KeyboardButton('Как изменить ФИО')
 main_menu_button_change_date = types.KeyboardButton('Как изменить дату')
+main_menu_button_change_value = types.KeyboardButton('Как изменить сумму')
 main_menu_button_show_database = types.KeyboardButton('Список')
 main_menu_button_payment = types.KeyboardButton('Оплатить')
 main_menu_button_delete = types.KeyboardButton('Удалить')
@@ -32,6 +34,7 @@ main_menu_markup.add(
     main_menu_button_add,
     main_menu_button_change_name,
     main_menu_button_change_date,
+    main_menu_button_change_value,
     main_menu_button_payment,
     main_menu_button_show_database,
     main_menu_button_delete
@@ -83,6 +86,12 @@ def change_date_button(message):
 def change_date_button(message):
     bot.send_message(message.chat.id, 'Напиши ФИО и новую дату через запятую.\n'
                                       'Пример: Иванов Иван Иванович, 10.12.2022')
+
+
+@bot.message_handler(func=lambda message: message.text == 'Как изменить сумму')
+def change_date_button(message):
+    bot.send_message(message.chat.id, 'Напиши ФИО и новую сумму.\n'
+                                      'Пример: Иванов Иван Иванович, 15000')
 
 
 def add_student(user_message,chat_id):
@@ -157,21 +166,24 @@ def print_database(message):
 def text_message_handler(message):
     user_message = message.text.split(',')
     if len(user_message) == 3:
-        add_student(user_message, message.chat.id)
+        return add_student(user_message, message.chat.id)
     elif len(user_message) == 2:
         if len(user_message[0].split()) == len(user_message[1].split()):
             old_fio = user_message[0].split()
             new_fio = user_message[1].split()
             change_process = change_fio(old_fio, new_fio)
-            bot.send_message(message.chat.id, change_process)
-        elif user_message[1].replace('.', '').strip(' ').isdigit():
+            return bot.send_message(message.chat.id, change_process)
+        elif user_message[1].replace('.', '').strip(' ').isdigit() and '.' in user_message[1]:
             try:
                 date = datetime.strptime(user_message[1].strip(' '), '%d.%m.%Y')
             except ValueError:
                 bot.send_message(message.chat.id, 'Дата должна быть написана в формате dd.mm.yyyy')
                 return
             change_data_process = change_data(user_message[0].split(' '), datetime.strftime(date, '%d.%m.%Y'))
-            bot.send_message(message.chat.id, change_data_process)
+            return bot.send_message(message.chat.id, change_data_process)
+        elif user_message[1].strip(' ').isdigit():
+            change_value_process = change_value(user_message[0].split(' '), user_message[1])
+            return bot.send_message(message.chat.id, change_value_process)
     return bot.send_message(message.chat.id, 'Ошибка: не удалось выполнить команду')
 
 
