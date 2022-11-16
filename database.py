@@ -24,12 +24,83 @@ def connect_database() -> sqlite3.Connection:
     return connect
 
 
+def change_fio(old_fio, new_fio):
+    connect = connect_database()
+    with connect:
+        sql = 'SELECT * FROM students WHERE last_name=? and first_name=? and second_name=?'
+        data = (
+            old_fio[0].capitalize(),
+            old_fio[1].capitalize(),
+            old_fio[2].capitalize()
+        )
+        find_person = connect.execute(sql, data).fetchall()
+        if not find_person:
+            return f"Ошибка: {' '.join(map(lambda x: x.capitalize(), old_fio))} не найден!"
+        sql = 'UPDATE students SET last_name=?, first_name=?, second_name=? WHERE last_name=? and first_name=? and second_name=?'
+        data = (
+            old_fio[0].capitalize(),
+            old_fio[1].capitalize(),
+            old_fio[2].capitalize(),
+            new_fio[0].capitalize(),
+            new_fio[1].capitalize(),
+            new_fio[2].capitalize()
+        )
+        connect.execute(sql, data)
+        return f'Успех: {" ".join(map(lambda x: x.capitalize(), old_fio))} изменен на {" ".join(map(lambda x: x.capitalize(), new_fio))}'
+
+
+def delete_student(fio):
+    connect =connect_database()
+    with connect:
+        sql = 'DELETE FROM students WHERE last_name=? and first_name=? and second_name=?'
+        data = (
+            fio[0],
+            fio[1],
+            fio[2],
+        )
+        connect.execute(sql, data)
+        return f'Успех: {" ".join(fio)} удален'
+
+
+def student_payment(fio):
+    connect = connect_database()
+    with connect:
+        sql = 'UPDATE students SET paid=1 WHERE last_name=? and first_name=? and second_name=?'
+        data = (
+            fio[0],
+            fio[1],
+            fio[2],
+        )
+        connect.execute(sql, data)
+        return f'Успех: {" ".join(fio)} оплачен'
+
+def change_data(fio, date):
+    connect = connect_database()
+    sql = 'SELECT * FROM students WHERE last_name=? and first_name=? and second_name=?'
+    data = (
+        fio[0].capitalize(),
+        fio[1].capitalize(),
+        fio[2].capitalize()
+    )
+    find_person = connect.execute(sql, data).fetchall()
+    if not find_person:
+        return f"Ошибка: {' '.join(map(lambda x: x.capitalize(), fio))} не найден!"
+    sql = 'UPDATE students SET exam_date=? WHERE last_name=? and first_name=? and second_name=?'
+    data = (
+        date,
+        fio[0].capitalize(),
+        fio[1].capitalize(),
+        fio[2].capitalize(),
+    )
+    connect.execute(sql, data)
+    return f"Успех: у {' '.join(map(lambda x: x.capitalize(), fio))} изменена дата на {date}"
+
 class Student:
 
     def __init__(self, last_name: str, first_name: str, second_name: str, value: int, exam_date: datetime):
-        self.last_name = last_name
-        self.first_name = first_name
-        self.second_name = second_name
+        self.last_name = last_name.capitalize().strip(' ')
+        self.first_name = first_name.capitalize().strip(' ')
+        self.second_name = second_name.capitalize().strip(' ')
         self.value = value
         self.exam_date = datetime.strftime(exam_date, '%d.%m.%Y')
 
@@ -61,7 +132,7 @@ class Student:
         return 'Успех: Данные записаны в БД'
 
 
-def get_database(key: str) -> str:
+def get_database(key='По дате добавления', type_list=None):
     sorting_keys = {
         'По фамилии': 0,
         'По дате': 5,
@@ -84,5 +155,9 @@ def get_database(key: str) -> str:
         ]
         database_list.append(data_for_table)
     database_table = tabulate(database_list, headers=['ФИО', 'Сумма', 'Оплачен', 'Дата'])
-    return database_table
+    if type_list == 'table':
+        return database_table
+    elif type_list == 'inline' or not key:
+        return database_list
+
 
