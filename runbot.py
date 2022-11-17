@@ -14,7 +14,7 @@ from database import change_value
 
 
 with open('bot_auth.txt', 'r') as file:
-    bot_token = file.read()
+    bot_token = str(file.read())
 bot = telebot.TeleBot(bot_token)
 
 with open('user_auth.txt', 'r') as file:
