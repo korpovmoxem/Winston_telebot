@@ -54,13 +54,15 @@ filter_by_date_button = types.KeyboardButton('По дате')
 filter_by_payment_button = types.KeyboardButton('По оплате')
 filter_by_value_button = types.KeyboardButton('По сумме')
 filter_by_id_button = types.KeyboardButton('По порядку добавления')
+select_date_button = types.KeyboardButton('Выбрать дату')
 filter_menu_markup.add(
     filter_by_last_name_button,
     filter_by_date_button,
     filter_by_payment_button,
     filter_by_value_button,
     filter_by_id_button,
-    back_menu_button
+    select_date_button,
+    back_menu_button,
 )
 
 
@@ -92,6 +94,13 @@ def change_date_button(message):
 def change_date_button(message):
     bot.send_message(message.chat.id, 'Напиши ФИО и новую сумму.\n'
                                       'Пример: Иванов Иван Иванович, 15000')
+
+
+@bot.message_handler(func=lambda message: message.text == 'Выбрать дату')
+def change_date_button(message):
+    bot.send_message(message.chat.id, 'Для того, чтобы вывести список на определенный день,'
+                                      'напиши дату в формате dd.mm.yyyy\n'
+                                      'Например: 01.12.2021')
 
 
 def add_student(user_message,chat_id):
@@ -165,14 +174,20 @@ def print_database(message):
 @bot.message_handler(content_types=['text'])
 def text_message_handler(message):
     user_message = message.text.split(',')
+
+    # Новая запись
     if len(user_message) == 3:
         return add_student(user_message, message.chat.id)
+
+    # Изменение ФИО
     elif len(user_message) == 2:
         if len(user_message[0].split()) == len(user_message[1].split()):
             old_fio = user_message[0].split()
             new_fio = user_message[1].split()
             change_process = change_fio(old_fio, new_fio)
             return bot.send_message(message.chat.id, change_process)
+
+        # Изменение даты
         elif user_message[1].replace('.', '').strip(' ').isdigit() and '.' in user_message[1]:
             try:
                 date = datetime.strptime(user_message[1].strip(' '), '%d.%m.%Y')
@@ -181,9 +196,22 @@ def text_message_handler(message):
                 return
             change_data_process = change_data(user_message[0].split(' '), datetime.strftime(date, '%d.%m.%Y'))
             return bot.send_message(message.chat.id, change_data_process)
+
+        # Изменение суммы
         elif user_message[1].strip(' ').isdigit():
             change_value_process = change_value(user_message[0].split(' '), user_message[1])
             return bot.send_message(message.chat.id, change_value_process)
+
+    # Список на определенную дату
+    elif len(user_message) == 1:
+        try:
+            date = datetime.strptime(user_message[0].strip(' '), '%d.%m.%Y')
+        except ValueError:
+            bot.send_message(message.chat.id, 'Дата должна быть написана в формате dd.mm.yyyy')
+            return
+        return bot.send_message(message.chat.id, f"Список на {user_message[0].strip(' ')}:\n\n"
+                                                 f"{get_database(date, 'table')}")
+
     return bot.send_message(message.chat.id, 'Ошибка: не удалось выполнить команду')
 
 
