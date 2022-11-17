@@ -1,4 +1,5 @@
 from datetime import datetime
+from os import remove as os_remove
 
 import telebot
 from telebot import types
@@ -16,29 +17,26 @@ with open('bot_auth.txt', 'r') as file:
     bot_token = file.read()
 bot = telebot.TeleBot(bot_token)
 
-user_auth = []
 with open('user_auth.txt', 'r') as file:
-    user_auth.append(file.read())
+    user_auth_list = list(map(lambda x: int(x.strip('\n')), file.readlines()))
+
 
 # Клавиатуры
 # Главное меню
 main_menu_markup = types.ReplyKeyboardMarkup(row_width=2)
-main_menu_button_add = types.KeyboardButton('Как добавить')
-main_menu_button_change_name = types.KeyboardButton('Как изменить ФИО')
-main_menu_button_change_date = types.KeyboardButton('Как изменить дату')
-main_menu_button_change_value = types.KeyboardButton('Как изменить сумму')
+main_menu_instructions_button = types.KeyboardButton('Инструкции')
 main_menu_button_show_database = types.KeyboardButton('Список')
 main_menu_button_payment = types.KeyboardButton('Оплатить')
 main_menu_button_delete = types.KeyboardButton('Удалить')
+main_menu_excel_button = types.KeyboardButton('Выгрузка в .xlsx')
 main_menu_markup.add(
-    main_menu_button_add,
-    main_menu_button_change_name,
-    main_menu_button_change_date,
-    main_menu_button_change_value,
+    main_menu_instructions_button,
     main_menu_button_payment,
+    main_menu_button_delete,
     main_menu_button_show_database,
-    main_menu_button_delete
+    main_menu_excel_button,
 )
+
 
 # Меню "Назад"
 back_menu_markup = types.ReplyKeyboardMarkup(row_width=1)
@@ -65,11 +63,44 @@ filter_menu_markup.add(
     back_menu_button,
 )
 
+# Меню инструкций
+instructions_menu_markup = types.ReplyKeyboardMarkup(row_width=2)
+instructions_menu_button_add = types.KeyboardButton('Как добавить')
+instructions_menu_button_change_name = types.KeyboardButton('Как изменить ФИО')
+instructions_menu_button_change_date = types.KeyboardButton('Как изменить дату')
+instructions_menu_button_change_value = types.KeyboardButton('Как изменить сумму')
+instructions_menu_markup.add(
+    instructions_menu_button_add,
+    instructions_menu_button_change_name,
+    instructions_menu_button_change_date,
+    instructions_menu_button_change_value,
+    back_menu_button
+)
+
+
+@bot.message_handler(func=lambda message: message.from_user.id not in user_auth_list)
+def user_auth(message):
+    bot.send_message(message.chat.id, 'Нет доступа')
+
+
+@bot.message_handler(func=lambda message: message.text == 'Выгрузка в .xlsx')
+def get_database_xlsx(message):
+    get_database(type_list='excel')
+    with open('database.xslx', 'rb') as database_file:
+        bot.send_document(message.chat.id, database_file)
+    os_remove('database.xslx')
+    return
+
 
 @bot.message_handler(func=lambda message: message.text == 'Назад в меню')
 @bot.message_handler(commands=['start'])
 def authorization(message):
     bot.send_message(message.chat.id, 'Выбери один из пунктов меню:', reply_markup=main_menu_markup)
+
+
+@bot.message_handler(func=lambda message: message.text == 'Инструкции')
+def instruction_button(message):
+    bot.send_message(message.chat.id, 'Выбери один из пунктов меню:', reply_markup=instructions_menu_markup)
 
 
 @bot.message_handler(func=lambda message: message.text == 'Как добавить')
@@ -79,7 +110,7 @@ def add_button(message):
 
 
 @bot.message_handler(func=lambda message: message.text == 'Как изменить ФИО')
-def change_date_button(message):
+def change_fio_button(message):
     bot.send_message(message.chat.id, 'Напиши текущее ФИО и новое ФИО через запятую.\n'
                                       'Пример: Иванов Иван Иванович, Василенко Василий Васильевич')
 
@@ -91,19 +122,19 @@ def change_date_button(message):
 
 
 @bot.message_handler(func=lambda message: message.text == 'Как изменить сумму')
-def change_date_button(message):
+def change_value_button(message):
     bot.send_message(message.chat.id, 'Напиши ФИО и новую сумму.\n'
                                       'Пример: Иванов Иван Иванович, 15000')
 
 
 @bot.message_handler(func=lambda message: message.text == 'Выбрать дату')
 def change_date_button(message):
-    bot.send_message(message.chat.id, 'Для того, чтобы вывести список на определенный день,'
+    bot.send_message(message.chat.id, 'Для того, чтобы вывести список на определенный день, '
                                       'напиши дату в формате dd.mm.yyyy\n'
                                       'Например: 01.12.2021')
 
 
-def add_student(user_message,chat_id):
+def add_student(user_message, chat_id):
     fio = user_message[0].split(' ')
     value = user_message[1].strip(' ')
     if len(fio) != 3:
@@ -166,8 +197,9 @@ def print_database_button(message):
     bot.send_message(message.chat.id, 'Выбери способ фильтрации списка', reply_markup=filter_menu_markup)
 
 
-@bot.message_handler(func=lambda message: message.text in ['По фамилии', 'По дате', 'По оплате', 'По сумме', 'По порядку добавления'])
-def print_database(message):
+@bot.message_handler(func=lambda message: message.text in ['По фамилии', 'По дате', 'По оплате', 'По сумме',
+                                                           'По порядку добавления'])
+def get_database_print(message):
     bot.send_message(message.chat.id, get_database(message.text, type_list='table'))
 
 

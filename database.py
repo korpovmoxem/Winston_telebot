@@ -3,6 +3,8 @@ import sqlite3 as sl
 from datetime import datetime
 from tabulate import tabulate
 
+import openpyxl
+
 
 def connect_database() -> sqlite3.Connection:
     connect = sl.connect('DataBase.db')
@@ -74,6 +76,7 @@ def student_payment(fio):
     with connect:
         connect.execute(sql, data)
     return f'Успех: {" ".join(fio)} оплачен'
+
 
 def change_data(fio, date):
     connect = connect_database()
@@ -198,5 +201,14 @@ def get_database(key='По порядку добавления', type_list=None)
         return database_table
     elif type_list == 'inline' or not key:
         return database_list
+    elif type_list == 'excel':
+        sql = 'SELECT last_name, first_name, second_name, value, paid FROM students'
+        with connect:
+            database = connect.execute(sql).fetchall()
+        workbook = openpyxl.Workbook()
+        worksheet = workbook.active
+        for row in database:
+            worksheet.append(row)
+        workbook.save('database.xslx')
 
 
