@@ -86,9 +86,9 @@ def user_auth(message):
 @bot.message_handler(func=lambda message: message.text == 'Выгрузка в .xlsx')
 def get_database_xlsx(message):
     get_database(type_list='excel')
-    with open('database.xslx', 'rb') as database_file:
+    with open('database.xlsx', 'rb') as database_file:
         bot.send_document(message.chat.id, database_file)
-    os_remove('database.xslx')
+    os_remove('database.xlsx')
     return
 
 
