@@ -205,10 +205,12 @@ def get_database(key='По порядку добавления', type_list=None)
         sql = 'SELECT last_name, first_name, second_name, value, paid FROM students'
         with connect:
             database = connect.execute(sql).fetchall()
+        database = list(map(lambda x: [f'{x[0]} {x[1]} {x[2]}, {x[3]}, {"Да" if x[4] == 1 else "Нет"}'], database))
         workbook = openpyxl.Workbook()
         worksheet = workbook.active
+        worksheet.add(['ФИО', 'Сумма', 'Оплачен'])
         for row in database:
             worksheet.append(row)
-        workbook.save('database.xslx')
+        workbook.save('database.xlsx')
 
 
