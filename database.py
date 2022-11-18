@@ -208,7 +208,7 @@ def get_database(key='По порядку добавления', type_list=None)
         database = list(map(lambda x: [f'{x[0]} {x[1]} {x[2]}, {x[3]}, {"Да" if x[4] == 1 else "Нет"}'], database))
         workbook = openpyxl.Workbook()
         worksheet = workbook.active
-        worksheet.add(['ФИО', 'Сумма', 'Оплачен'])
+        worksheet.append(['ФИО', 'Сумма', 'Оплачен'])
         for row in database:
             worksheet.append(row)
         workbook.save('database.xlsx')
