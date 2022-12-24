@@ -12,6 +12,7 @@ from database import change_fio
 from database import change_data
 from database import change_value
 from database import student_back_payment
+from database import database_change_format_dates
 
 
 with open('bot_auth.txt', 'r') as file:
@@ -86,6 +87,11 @@ def user_auth(message):
     bot.send_message(message.chat.id, 'Нет доступа')
 
 
+@bot.message_handler(commands=['change_format_dates'])
+def change_format_dates(message):
+    database_change_format_dates()
+
+
 @bot.message_handler(func=lambda message: message.text == 'Выгрузка в .xlsx')
 def get_database_xlsx(message):
     get_database(type_list='excel')
@@ -109,7 +115,7 @@ def instruction_button(message):
 @bot.message_handler(func=lambda message: message.text == 'Как добавить')
 def add_button(message):
     bot.send_message(message.chat.id, 'Напиши ФИО, сумму и дату через запятую.\n'
-                                      'Пример: Иванов Иван Иванович, 100, 22.10.2022')
+                                      'Пример: Иванов Иван Иванович, 100, 22.10.22')
 
 
 @bot.message_handler(func=lambda message: message.text == 'Как изменить ФИО')
@@ -121,7 +127,7 @@ def change_fio_button(message):
 @bot.message_handler(func=lambda message: message.text == 'Как изменить дату')
 def change_date_button(message):
     bot.send_message(message.chat.id, 'Напиши ФИО и новую дату через запятую.\n'
-                                      'Пример: Иванов Иван Иванович, 10.12.2022')
+                                      'Пример: Иванов Иван Иванович, 10.12.22')
 
 
 @bot.message_handler(func=lambda message: message.text == 'Как изменить сумму')
@@ -133,7 +139,7 @@ def change_value_button(message):
 @bot.message_handler(func=lambda message: message.text == 'Выбрать дату')
 def change_date_button(message):
     bot.send_message(message.chat.id, 'Для того, чтобы вывести список на определенный день, '
-                                      'напиши дату в формате dd.mm.yyyy\n'
+                                      'напиши дату в формате dd.mm.yy\n'
                                       'Например: 01.12.2021')
 
 
@@ -149,9 +155,9 @@ def add_student(user_message, chat_id):
     else:
         value = int(user_message[1])
     try:
-        date = datetime.strptime(user_message[2].strip(' '), '%d.%m.%Y')
+        date = datetime.strptime(user_message[2].strip(' '), '%d.%m.%y')
     except ValueError:
-        bot.send_message(chat_id, 'Дата должна быть написана в формате dd.mm.yyyy')
+        bot.send_message(chat_id, 'Дата должна быть написана в формате dd.mm.yy')
         return
     new_student = Student(fio[0], fio[1], fio[2], value, date)
     database_entry = new_student.add_to_database()
@@ -249,11 +255,11 @@ def text_message_handler(message):
         # Изменение даты
         elif user_message[1].replace('.', '').strip(' ').isdigit() and '.' in user_message[1]:
             try:
-                date = datetime.strptime(user_message[1].strip(' '), '%d.%m.%Y')
+                date = datetime.strptime(user_message[1].strip(' '), '%d.%m.%y')
             except ValueError:
-                bot.send_message(message.chat.id, 'Дата должна быть написана в формате dd.mm.yyyy')
+                bot.send_message(message.chat.id, 'Дата должна быть написана в формате dd.mm.yy')
                 return
-            change_data_process = change_data(user_message[0].split(' '), datetime.strftime(date, '%d.%m.%Y'))
+            change_data_process = change_data(user_message[0].split(' '), datetime.strftime(date, '%d.%m.%y'))
             return bot.send_message(message.chat.id, change_data_process)
 
         # Изменение суммы
@@ -264,9 +270,9 @@ def text_message_handler(message):
     # Список на определенную дату
     elif len(user_message) == 1:
         try:
-            date = datetime.strptime(user_message[0].strip(' '), '%d.%m.%Y')
+            date = datetime.strptime(user_message[0].strip(' '), '%d.%m.%y')
         except ValueError:
-            bot.send_message(message.chat.id, 'Дата должна быть написана в формате dd.mm.yyyy')
+            bot.send_message(message.chat.id, 'Дата должна быть написана в формате dd.mm.yy')
             return
         return bot.send_message(message.chat.id, f"Список на {user_message[0].strip(' ')}:\n\n"
                                                  f"{get_database(date, 'table')}")

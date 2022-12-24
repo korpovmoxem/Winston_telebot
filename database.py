@@ -145,7 +145,7 @@ class Student:
         self.first_name = first_name.capitalize().strip(' ')
         self.second_name = second_name.capitalize().strip(' ')
         self.value = value
-        self.exam_date = datetime.strftime(exam_date, '%d.%m.%Y')
+        self.exam_date = datetime.strftime(exam_date, '%d.%m.%y')
 
     def is_student_in_database(self) -> list:
         connect = connect_database()
@@ -178,7 +178,7 @@ class Student:
 def get_database(key='По порядку добавления', type_list=None):
     connect = connect_database()
     if isinstance(key, datetime):
-        date = datetime.strftime(key, '%d.%m.%Y')
+        date = datetime.strftime(key, '%d.%m.%y')
         sql = 'SELECT last_name, first_name, second_name, value, paid FROM students WHERE exam_date=?'
         data = (
             date,
@@ -201,7 +201,7 @@ def get_database(key='По порядку добавления', type_list=None)
     database_list = []
 
     if key == 'По дате':
-        database_entries = list(map(lambda x: [x[0], x[1], x[2], x[3], x[4], x[5], datetime.strptime(x[6], '%d.%m.%Y')], database_entries))
+        database_entries = list(map(lambda x: [x[0], x[1], x[2], x[3], x[4], x[5], datetime.strptime(x[6], '%d.%m.%y')], database_entries))
 
     for entry in sorted(database_entries, key=lambda x: x[sorting_keys[key]]):
         entry = list(entry)
@@ -210,7 +210,7 @@ def get_database(key='По порядку добавления', type_list=None)
             f"{entry[1]} {entry[2]} {entry[3]}",
             entry[4],
             entry[5],
-            entry[6] if type(entry[6]) == str else datetime.strftime(entry[6], '%d.%m.%Y')
+            entry[6] if type(entry[6]) == str else datetime.strftime(entry[6], '%d.%m.%y')
         ]
         database_list.append(data_for_table)
     database_table = tabulate(database_list, headers=['ФИО', 'Сумма', 'Оплачен', 'Дата'])
@@ -229,5 +229,23 @@ def get_database(key='По порядку добавления', type_list=None)
         for row in database:
             worksheet.append(row)
         workbook.save('database.xlsx')
+
+
+def database_change_format_dates():
+    connect = connect_database()
+    sql = 'SELECT * FROM students'
+    with connect:
+        database_entries = connect.execute(sql).fetchall()
+    for entry in database_entries:
+        new_date = datetime.strptime(entry[6], '%d.%m.%Y')
+        new_date = datetime.strftime(new_date, '%d.%m.%y')
+        sql = 'UPDATE students SET exam_date=? WHERE id=?'
+        data = (
+            new_date,
+            entry[0]
+        )
+        with connect:
+            connect.execute(sql, data)
+
 
 
