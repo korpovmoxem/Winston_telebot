@@ -167,6 +167,7 @@ def add_student(user_message, chat_id):
 @bot.message_handler(func=lambda message: message.text == 'Удалить')
 def delete_student_button(message):
     database = get_database(type_list='inline')
+    database = list(map(lambda x: [x[0], x[1], 'Да' if x[2] == 'Оплачен' else 'Нет', x[3]], database))
     student_list_menu = types.InlineKeyboardMarkup(row_width=1)
     for person in database:
         person_string = ' | '.join(map(lambda x: str(x), person))
