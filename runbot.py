@@ -222,7 +222,12 @@ def print_database_button(message):
 @bot.message_handler(func=lambda message: message.text in ['По фамилии', 'По дате', 'По оплате', 'По сумме',
                                                            'По порядку добавления'])
 def get_database_print(message):
-    bot.send_message(message.chat.id, get_database(message.text, type_list='table'))
+    database_table = get_database(message.text, type_list='table')
+    if len(database_table) > 4095:
+        for x in range(0, len(database_table), 4095):
+            bot.send_message(message.chat.id, database_table[x:x + 4095])
+    else:
+        bot.send_message(message.chat.id, database_table)
 
 
 @bot.message_handler(content_types=['text'])
