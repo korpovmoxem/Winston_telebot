@@ -78,6 +78,19 @@ def student_payment(fio):
     return f'Успех: {" ".join(fio)} оплачен'
 
 
+def student_back_payment(fio):
+    connect = connect_database()
+    sql = 'UPDATE students SET paid=0 WHERE last_name=? and first_name=? and second_name=?'
+    data = (
+        fio[0],
+        fio[1],
+        fio[2],
+    )
+    with connect:
+        connect.execute(sql, data)
+    return f'Успех: Оплата для {" ".join(fio)} отменена'
+
+
 def change_data(fio, date):
     connect = connect_database()
     sql = 'SELECT * FROM students WHERE last_name=? and first_name=? and second_name=?'
@@ -176,11 +189,11 @@ def get_database(key='По порядку добавления', type_list=None)
             database = list(map(lambda x: [f"{x[0]} {x[1]} {x[2]}", x[3], 'Да' if x[4] == 1 else 'Нет'], database))
             return tabulate(database, headers=['ФИО', 'Сумма', 'Оплачен'])
     sorting_keys = {
-        'По фамилии': 0,
-        'По дате': 5,
-        'По сумме': 3,
-        'По оплате': 4,
-        'По порядку добавления': 1,
+        'По фамилии': 1,
+        'По дате': 6,
+        'По сумме': 4,
+        'По оплате': 5,
+        'По порядку добавления': 0,
     }
     sql = 'SELECT * FROM students'
     with connect:

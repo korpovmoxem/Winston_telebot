@@ -11,6 +11,7 @@ from database import delete_student
 from database import change_fio
 from database import change_data
 from database import change_value
+from database import student_back_payment
 
 
 with open('bot_auth.txt', 'r') as file:
@@ -27,12 +28,14 @@ main_menu_markup = types.ReplyKeyboardMarkup(row_width=2)
 main_menu_instructions_button = types.KeyboardButton('Инструкции')
 main_menu_button_show_database = types.KeyboardButton('Список')
 main_menu_button_payment = types.KeyboardButton('Оплатить')
+main_menu_button_back_payment = types.KeyboardButton('Отмена оплаты')
 main_menu_button_delete = types.KeyboardButton('Удалить')
 main_menu_excel_button = types.KeyboardButton('Выгрузка в .xlsx')
 main_menu_markup.add(
     main_menu_instructions_button,
     main_menu_button_payment,
     main_menu_button_delete,
+    main_menu_button_back_payment,
     main_menu_button_show_database,
     main_menu_excel_button,
 )
@@ -176,6 +179,25 @@ def student_payment_button(message):
         person_inline_button = types.InlineKeyboardButton(text=person_string, callback_data=f"payment {person[0]}")
         student_list_menu.add(person_inline_button)
     bot.send_message(message.chat.id, 'Выбери кого оплатить', reply_markup=student_list_menu)
+
+
+@bot.message_handler(func=lambda message: message.text == 'Отмена оплаты')
+def student_back_payment_button(message):
+    database = list(filter(lambda x: x[2] == 'Оплачен', get_database(type_list='inline')))
+    student_list_menu = types.InlineKeyboardMarkup(row_width=1)
+    for person in database:
+        del person[2]
+        person_string = ' | '.join(map(lambda x: str(x), person))
+        person_inline_button = types.InlineKeyboardButton(text=person_string, callback_data=f"back_payment {person[0]}")
+        student_list_menu.add(person_inline_button)
+    bot.send_message(message.chat.id, 'Выбери чью оплату надо отменить', reply_markup=student_list_menu)
+
+
+@bot.callback_query_handler(func=lambda callback: 'back_payment' in callback.data)
+def callback_student_back_payment(callback):
+    student_fio = callback.data.split(' ')[1:]
+    back_payment_process = student_back_payment(student_fio)
+    bot.send_message(callback.message.chat.id, back_payment_process)
 
 
 @bot.callback_query_handler(func=lambda callback: 'payment' in callback.data)
