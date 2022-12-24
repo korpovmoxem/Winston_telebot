@@ -199,6 +199,10 @@ def get_database(key='По порядку добавления', type_list=None)
     with connect:
         database_entries = connect.execute(sql).fetchall()
     database_list = []
+
+    if key == 'По дате':
+        database_entries = list(map(lambda x: [x[0], x[1], x[2], x[3], x[4], x[5], datetime.strptime(x[6], '%d.%m.%Y')], database_entries))
+
     for entry in sorted(database_entries, key=lambda x: x[sorting_keys[key]]):
         entry = list(entry)
         entry[5] = 'Оплачен' if entry[5] == 1 else 'Не оплачен'
@@ -206,7 +210,7 @@ def get_database(key='По порядку добавления', type_list=None)
             f"{entry[1]} {entry[2]} {entry[3]}",
             entry[4],
             entry[5],
-            entry[6]
+            entry[6] if type(entry[6]) == str else datetime.strftime(entry[6], '%d.%m.%Y')
         ]
         database_list.append(data_for_table)
     database_table = tabulate(database_list, headers=['ФИО', 'Сумма', 'Оплачен', 'Дата'])
